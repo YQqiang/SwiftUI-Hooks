@@ -15,11 +15,7 @@ func alert(_ message: String) {
 }
 
 func bindingFromUseState<S>(_ useStateTuple: (S, (S) -> ())) -> Binding<S> {
-    return Binding(getValue: {
-        return useStateTuple.0
-    }, setValue: {
-        useStateTuple.1($0)
-    })
+    return Binding { useStateTuple.0 } set: { useStateTuple.1($0) }
 }
 
 struct TodoItem : Identifiable {
@@ -38,11 +34,13 @@ enum TodoAction {
 let TodoItemView = { (item: TodoItem, dispatch: @escaping (TodoAction) -> ()) in
     RendererView { hook in
         return HStack(alignment: .center, spacing: 6) {
-            Toggle(isOn: Binding<Bool>(getValue: {
-                return item.done
-            }, setValue: {
-                dispatch(.edit(item.id, item.content, $0))
-            })) { EmptyView() }
+            
+            Toggle(isOn:
+                    Binding { () -> Bool in
+                        item.done
+                    } set: { (arg) in
+                        dispatch(.edit(item.id, item.content, arg))
+                    }) { EmptyView() }
             .fixedSize()
             
             Text(item.content)
@@ -93,9 +91,7 @@ let ContentView = { RendererView { hooks in
     let totalLeft = todos.count - todos.map({ $0.done ? 1 : 0 }).reduce(0) { $0 + $1 }
     
     return VStack {
-        TextField(bindingFromUseState(newTodoContent),
-                  placeholder: Text("What needs to be done?"),
-                  onEditingChanged: { _ in }) {
+        TextField("What needs to be done?", text: bindingFromUseState(newTodoContent)) { (_) in
             dispatch(.add(newTodoContent.0))
             newTodoContent.1("")
         }

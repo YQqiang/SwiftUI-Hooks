@@ -68,7 +68,7 @@ struct RendererView : View {
     
     static let triggerOnce = TriggerOnceDep()
     
-    fileprivate class InternalState : BindableObject, RendererViewHooks {
+    fileprivate class InternalState : ObservableObject, RendererViewHooks {
         
         struct AlwaysTriggerDep : Hashable {
             // Tag dep type for effects that should be called every
@@ -79,8 +79,8 @@ struct RendererView : View {
         var effectDepSlots = [Any]()
         var pendingEffects = [EffectCallback]()
         var initialRendering = true
-        var updatingScheduled = false
-        var didChange = PassthroughSubject<InternalState, Never>()
+        @Published var updatingScheduled = false
+//        var didChange = PassthroughSubject<InternalState, Never>()
         
         enum HookType {
             case useState
@@ -148,7 +148,7 @@ struct RendererView : View {
             
             updatingScheduled = true
             OperationQueue.main.addOperation {
-                self.didChange.send(self)
+//                self.didChange.send(self)
                 self.updatingScheduled = false
             }
         }
@@ -173,7 +173,7 @@ struct RendererView : View {
     typealias Renderer = (RendererViewHooks) -> AnyView
     
     fileprivate let renderer: Renderer
-    @ObjectBinding fileprivate var internalState = InternalState()
+    @ObservedObject fileprivate var internalState = InternalState()
     
     init(_ renderer: @escaping Renderer) {
         self.renderer = renderer
